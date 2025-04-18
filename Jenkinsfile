@@ -30,24 +30,24 @@ pipeline {
     }
 }
         stage('Deploy with PM2') {
-            steps {
-                sh """
-                    # Copy files
-                    sudo -u ${APP_USER} rsync -a --delete ${WORKSPACE}/ ${APP_DIR}/
-                    
-                    # PM2 commands
-                    sudo -u ${APP_USER} bash -c '
-                        export PATH="/usr/local/bin:$PATH"
-                        cd ${APP_DIR}
-                        pm2 list | grep ${APP_NAME} && pm2 stop ${APP_NAME} || echo "App not running"
-                        pm2 list | grep ${APP_NAME} && pm2 delete ${APP_NAME} || echo "App not registered"
-                        pm2 start npm --name "${APP_NAME}" -- run start --cwd ${APP_DIR}
-                        pm2 save
-                        pm2 list
-                    '
-                """
-            }
-        }
+    steps {
+        sh """
+            sudo -u ${APP_USER} bash -c '
+                # Clean and copy files
+                rm -rf ${APP_DIR}/*
+                cp -r ${WORKSPACE}/* ${APP_DIR}/
+                
+                # Install dependencies and start
+                cd ${APP_DIR}
+                npm install --production
+                pm2 delete ${APP_NAME} || true
+                pm2 start npm --name "${APP_NAME}" -- run start
+                pm2 save
+                pm2 list
+            '
+        """
+    }
+}
     }
    
 }
