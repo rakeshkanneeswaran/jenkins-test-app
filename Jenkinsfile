@@ -24,15 +24,11 @@ pipeline {
                 '''
             }
         }
-        stage('Prepare Directory') {
-            steps {
-                sh """
-                    sudo mkdir -p ${APP_DIR}
-                    sudo chown -R ${APP_USER}:${APP_USER} ${APP_DIR}
-                    sudo chmod -R 755 ${APP_DIR}
-                """
-            }
-        }
+      stage('Prepare Directory') {
+    steps {
+        sh "echo 'Directory already prepared'"
+    }
+}
         stage('Deploy with PM2') {
             steps {
                 sh """
