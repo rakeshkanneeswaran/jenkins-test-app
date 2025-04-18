@@ -41,7 +41,7 @@ pipeline {
                         cd ${APP_DIR}
                         pm2 list | grep ${APP_NAME} && pm2 stop ${APP_NAME} || echo "App not running"
                         pm2 list | grep ${APP_NAME} && pm2 delete ${APP_NAME} || echo "App not registered"
-                        pm2 start npm --name "${APP_NAME}" -- run start
+                        pm2 start npm --name "${APP_NAME}" -- run start --cwd ${APP_DIR}
                         pm2 save
                         pm2 list
                     '
