@@ -33,7 +33,6 @@ pipeline {
             pm2 delete ${APP_NAME} || true
             pm2 start npm --name "${APP_NAME}" -- start
             pm2 save
-            sudo pm2 startup systemd -u ec2-user --hp /home/ec2-user
         '''
     }
 }
