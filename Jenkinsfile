@@ -20,23 +20,27 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    # Install dependencies including devDependencies
-                    npm install
+       stage('Install Dependencies') {
+         steps {
+        sh '''
+            # Install dependencies
+            npm install
 
-                    # Install TailwindCSS globally
-                    npm install -g tailwindcss
+            # Install Tailwind CSS globally
+            npm install -g tailwindcss
 
-                    # If tailwind.config.js does not exist, create it
-                    if [ ! -f tailwind.config.js ]; then
-                        echo "Initializing Tailwind CSS config..."
-                        tailwindcss init --yes
-                    fi
-                '''
-            }
-        }
+            # Find full path of tailwindcss and use it to init
+            TAILWIND_BIN=$(npm root -g)/../.bin/tailwindcss
+
+            # Check and init Tailwind config if not present
+            if [ ! -f tailwind.config.js ]; then
+                echo "Initializing Tailwind CSS config..."
+                $TAILWIND_BIN init --yes
+            fi
+        '''
+    }
+}
+
 
         stage('Build Next.js') {
             steps {
