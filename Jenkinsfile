@@ -2,20 +2,20 @@ pipeline {
     agent any
 
     tools {
-        nodejs "NodeJS_18"
+        nodejs "NodeJS_18" // Make sure Jenkins has this tool name configured
     }
 
     environment {
         APP_NAME = "my-nextjs-app"
         APP_DIR = "/home/ec2-user/app"
-        APP_PORT = 3000
+        APP_PORT = "3000"
         NODE_ENV = "production"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', 
+                git branch: 'main',
                     url: 'https://github.com/rakeshkanneeswaran/jenkins-test-app'
             }
         }
@@ -23,10 +23,15 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    # Install project dependencies
+                    echo "Installing dependencies..."
                     npm install
 
-                    # Initialize Tailwind CSS config only if not present
+                    echo "Ensuring tailwindcss is installed locally..."
+                    if ! npx tailwindcss -v > /dev/null 2>&1; then
+                        echo "Installing tailwindcss locally..."
+                        npm install -D tailwindcss
+                    fi
+
                     if [ ! -f tailwind.config.js ]; then
                         echo "Initializing Tailwind CSS config..."
                         npx tailwindcss init --yes
@@ -38,25 +43,29 @@ pipeline {
         stage('Build Next.js') {
             steps {
                 sh '''
+                    echo "Building Next.js App..."
                     rm -rf .next
-                    NODE_ENV=production npm run build
+                    npm run build
                 '''
             }
         }
 
         stage('Deploy with PM2') {
             steps {
-                sh """
+                sh '''
+                    echo "Deploying using PM2..."
                     mkdir -p ${APP_DIR}
-                    cp -r * ${APP_DIR}/
-                    chown -R ec2-user:ec2-user ${APP_DIR}
+                    cp -r . ${APP_DIR}/
                     cd ${APP_DIR}
+
                     pm2 stop ${APP_NAME} || true
                     pm2 delete ${APP_NAME} || true
                     pm2 start npm --name "${APP_NAME}" -- start
                     pm2 save
-                    sudo env PATH=\$PATH:/usr/bin /usr/local/bin/pm2 startup -u ec2-user --hp /home/ec2-user
-                """
+
+                    # Setup PM2 startup (only needed once, so it's fine to skip on re-runs)
+                    sudo pm2 startup systemd -u ec2-user --hp /home/ec2-user
+                '''
             }
         }
     }
