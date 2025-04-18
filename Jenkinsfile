@@ -26,6 +26,8 @@ pipeline {
                     echo "Installing dependencies..."
                     npm install
                     npm install pm2 -g
+                    npm install tailwindcss postcss @tailwindcss/postcss
+                    npm install autoprefixer
                 '''
             }
         }
