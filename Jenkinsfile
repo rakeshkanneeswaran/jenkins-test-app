@@ -24,19 +24,8 @@ pipeline {
             steps {
                 sh '''
                     # Install all dependencies including devDependencies
-                    npm install --include=dev
+                    npm install
                     
-                    # Explicitly install Tailwind CSS and PostCSS requirements
-                    npm install -D tailwindcss postcss autoprefixer
-                    
-                    # Initialize Tailwind config (simplified approach)
-                    if [ ! -f tailwind.config.js ]; then
-                        echo "Initializing Tailwind CSS config..."
-                        npx tailwindcss init --yes
-                        npx tailwindcss init -p --yes
-                    else
-                        echo "Tailwind config already exists"
-                    fi
                 '''
             }
         }
