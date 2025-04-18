@@ -25,17 +25,7 @@ pipeline {
                 sh '''
                     echo "Installing dependencies..."
                     npm install
-
-                    echo "Ensuring tailwindcss is installed locally..."
-                    if ! npx tailwindcss -v > /dev/null 2>&1; then
-                        echo "Installing tailwindcss locally..."
-                        npm install -D tailwindcss
-                    fi
-
-                    if [ ! -f tailwind.config.js ]; then
-                        echo "Initializing Tailwind CSS config..."
-                        npx tailwindcss init --yes
-                    fi
+                    npm install pm2 -g
                 '''
             }
         }
