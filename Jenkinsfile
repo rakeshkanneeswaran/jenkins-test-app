@@ -3,11 +3,12 @@ pipeline {
     tools {
         nodejs "NodeJS_18"
     }
-environment {
-    APP_NAME = "my-nextjs-app"
-    APP_DIR = "/home/ubuntu/app"
-    APP_USER = "ubuntu"
-}
+    environment {
+        APP_NAME = "my-nextjs-app"
+        APP_DIR = "/home/ubuntu/app"
+        APP_USER = "ubuntu"
+        PATH = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${env.PATH}"  // Critical fix
+    }
     stages {
         stage('Checkout Code') {
             steps {
@@ -23,22 +24,43 @@ environment {
                 '''
             }
         }
-      stage('Deploy with PM2') {
-    steps {
-        sh '''
-            # Clean and copy files
-            sudo -u ubuntu bash -c '
-                rm -rf ${APP_DIR}/*
-                cp -r ${WORKSPACE}/* ${APP_DIR}/
-                chmod -R 755 ${APP_DIR}
-                cd ${APP_DIR}
-                pm2 stop ${APP_NAME} || true
-                pm2 delete ${APP_NAME} || true
-                pm2 start npm --name "${APP_NAME}" -- start
-                pm2 save
-            '
-        '''
+        stage('Prepare Directory') {
+            steps {
+                sh """
+                    sudo mkdir -p ${APP_DIR}
+                    sudo chown -R ${APP_USER}:${APP_USER} ${APP_DIR}
+                    sudo chmod -R 755 ${APP_DIR}
+                """
+            }
+        }
+        stage('Deploy with PM2') {
+            steps {
+                sh """
+                    # Copy files
+                    sudo -u ${APP_USER} rsync -a --delete ${WORKSPACE}/ ${APP_DIR}/
+                    
+                    # PM2 commands
+                    sudo -u ${APP_USER} bash -c '
+                        export PATH="/usr/local/bin:$PATH"
+                        cd ${APP_DIR}
+                        pm2 list | grep ${APP_NAME} && pm2 stop ${APP_NAME} || echo "App not running"
+                        pm2 list | grep ${APP_NAME} && pm2 delete ${APP_NAME} || echo "App not registered"
+                        pm2 start npm --name "${APP_NAME}" -- run start
+                        pm2 save
+                        pm2 list
+                    '
+                """
+            }
+        }
     }
-}
+    post {
+        always {
+            sh '''
+                echo "PM2 Process List:"
+                sudo -u ${APP_USER} pm2 list || true
+                echo "App Directory Contents:"
+                ls -la ${APP_DIR} || true
+            '''
+        }
     }
 }
