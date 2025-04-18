@@ -70,17 +70,4 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            cleanWs()
-        }
-        success {
-            echo "Deployment successful! Access at: http://${env.APP_PORT}"
-           
-        }
-        failure {
-            echo "Deployment failed. Check logs."
-           
-        }
-    }
 }
