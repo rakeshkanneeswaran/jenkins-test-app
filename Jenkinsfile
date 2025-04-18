@@ -76,11 +76,11 @@ pipeline {
         }
         success {
             echo "Deployment successful! Access at: http://${env.APP_PORT}"
-            slackSend(color: "good", message: "SUCCESS: ${env.APP_NAME} deployed")
+           
         }
         failure {
             echo "Deployment failed. Check logs."
-            slackSend(color: "danger", message: "FAILED: ${env.APP_NAME} deployment")
+           
         }
     }
 }
