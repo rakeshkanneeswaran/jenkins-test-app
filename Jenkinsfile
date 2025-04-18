@@ -53,14 +53,5 @@ pipeline {
             }
         }
     }
-    post {
-        always {
-            sh '''
-                echo "PM2 Process List:"
-                sudo -u ${APP_USER} pm2 list || true
-                echo "App Directory Contents:"
-                ls -la ${APP_DIR} || true
-            '''
-        }
-    }
+   
 }
