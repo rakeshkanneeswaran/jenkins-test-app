@@ -22,13 +22,30 @@ pipeline {
         
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                sh '''
+                    # Install all dependencies including devDependencies
+                    npm install --include=dev
+                    
+                    # Explicitly install Tailwind CSS and PostCSS requirements
+                    npm install -D tailwindcss postcss autoprefixer @tailwindcss/postcss
+                    
+                    # Initialize Tailwind config if not present
+                    if [ ! -f tailwind.config.js ]; then
+                        npx tailwindcss init -p
+                    fi
+                '''
             }
         }
         
         stage('Build Next.js') {
             steps {
-                sh 'npm run build'
+                sh '''
+                    # Clean previous build
+                    rm -rf .next
+                    
+                    # Run build with production node environment
+                    NODE_ENV=production npm run build
+                '''
             }
         }
         
@@ -57,6 +74,9 @@ pipeline {
     }
     
     post {
+        always {
+            cleanWs()  // Clean workspace after build
+        }
         success {
             echo "Deployment successful! Access at: http://${env.APP_PORT}"
             slackSend(color: "good", message: "SUCCESS: ${env.APP_NAME} deployed")
