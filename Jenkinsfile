@@ -28,23 +28,8 @@ pipeline {
                     npm install pm2 -g
                     npm install tailwindcss postcss @tailwindcss/postcss
                     npm install autoprefixer
-                '''
-            }
-        }
-
-        stage('Build Next.js') {
-            steps {
-                sh '''
                     echo "Building Next.js App..."
-                    rm -rf .next
                     npm run build
-                '''
-            }
-        }
-
-        stage('Deploy with PM2') {
-            steps {
-                sh '''
                     echo "Deploying using PM2..."
                     mkdir -p ${APP_DIR}
                     cp -r . ${APP_DIR}/
@@ -60,5 +45,8 @@ pipeline {
                 '''
             }
         }
+
+     
+
     }
 }
