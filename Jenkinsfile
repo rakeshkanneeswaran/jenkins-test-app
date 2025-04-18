@@ -2,18 +2,21 @@ pipeline {
     agent any
     
     tools {
-        nodejs "NodeJS"  // Matches the name in Global Tools
+        nodejs "NodeJS_18"  // Must match Jenkins Global Tools config
     }
     
     environment {
         APP_NAME = "my-nextjs-app"
+        APP_DIR = "/home/ec2-user/app"  // Deployment directory
         APP_PORT = 3000
+        NODE_ENV = "production"
     }
     
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/rakeshkanneeswaran/jenkins-test-app'
+                git branch: 'main', 
+                url: 'https://github.com/rakeshkanneeswaran/jenkins-test-app'
             }
         }
         
@@ -31,18 +34,24 @@ pipeline {
         
         stage('Deploy with PM2') {
             steps {
-                sh '''
-                    # Stop existing app if running
-                    pm2 stop ${APP_NAME} || true
-                    pm2 delete ${APP_NAME} || true
+                script {
+                    // Create app directory with correct permissions
+                    sh """
+                        mkdir -p ${APP_DIR}
+                        cp -r * ${APP_DIR}/
+                        chown -R ec2-user:ec2-user ${APP_DIR}
+                    """
                     
-                    # Start new instance
-                    pm2 start npm --name "${APP_NAME}" -- start
-                    pm2 save
-                    
-                    # Ensure PM2 starts on reboot
-                    pm2 startup | grep -v "[PM2]" | bash
-                '''
+                    // PM2 process management
+                    sh """
+                        cd ${APP_DIR}
+                        pm2 stop ${APP_NAME} || true
+                        pm2 delete ${APP_NAME} || true
+                        pm2 start npm --name "${APP_NAME}" -- start
+                        pm2 save
+                        sudo env PATH=\$PATH:/usr/bin /usr/local/bin/pm2 startup -u ec2-user --hp /home/ec2-user
+                    """
+                }
             }
         }
     }
@@ -50,9 +59,11 @@ pipeline {
     post {
         success {
             echo "Deployment successful! Access at: http://${env.APP_PORT}"
+            slackSend(color: "good", message: "SUCCESS: ${env.APP_NAME} deployed")
         }
         failure {
             echo "Deployment failed. Check logs."
+            slackSend(color: "danger", message: "FAILED: ${env.APP_NAME} deployment")
         }
     }
 }
