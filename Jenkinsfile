@@ -1,17 +1,17 @@
 pipeline {
     agent any
-    
+
     tools {
         nodejs "NodeJS_18"
     }
-    
+
     environment {
         APP_NAME = "my-nextjs-app"
         APP_DIR = "/home/ec2-user/app"
         APP_PORT = 3000
         NODE_ENV = "production"
     }
-    
+
     stages {
         stage('Checkout Code') {
             steps {
@@ -19,29 +19,34 @@ pipeline {
                 url: 'https://github.com/rakeshkanneeswaran/jenkins-test-app'
             }
         }
-        
+
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    # Install all dependencies including devDependencies
+                    # Install dependencies including devDependencies
                     npm install
-                    
+
+                    # Install TailwindCSS globally
+                    npm install -g tailwindcss
+
+                    # If tailwind.config.js does not exist, create it
+                    if [ ! -f tailwind.config.js ]; then
+                        echo "Initializing Tailwind CSS config..."
+                        tailwindcss init --yes
+                    fi
                 '''
             }
         }
-        
+
         stage('Build Next.js') {
             steps {
                 sh '''
-                    # Clean previous build
                     rm -rf .next
-                    
-                    # Run build with production node environment
                     NODE_ENV=production npm run build
                 '''
             }
         }
-        
+
         stage('Deploy with PM2') {
             steps {
                 script {
@@ -60,7 +65,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
