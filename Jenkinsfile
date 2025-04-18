@@ -2,12 +2,12 @@ pipeline {
     agent any
     
     tools {
-        nodejs "NodeJS_18"  // Must match Jenkins Global Tools config
+        nodejs "NodeJS_18"
     }
     
     environment {
         APP_NAME = "my-nextjs-app"
-        APP_DIR = "/home/ec2-user/app"  // Deployment directory
+        APP_DIR = "/home/ec2-user/app"
         APP_PORT = 3000
         NODE_ENV = "production"
     }
@@ -27,11 +27,15 @@ pipeline {
                     npm install --include=dev
                     
                     # Explicitly install Tailwind CSS and PostCSS requirements
-                    npm install -D tailwindcss postcss autoprefixer @tailwindcss/postcss
+                    npm install -D tailwindcss postcss autoprefixer
                     
-                    # Initialize Tailwind config if not present
+                    # Initialize Tailwind config (simplified approach)
                     if [ ! -f tailwind.config.js ]; then
-                        npx tailwindcss init -p
+                        echo "Initializing Tailwind CSS config..."
+                        npx tailwindcss init --yes
+                        npx tailwindcss init -p --yes
+                    else
+                        echo "Tailwind config already exists"
                     fi
                 '''
             }
@@ -52,15 +56,10 @@ pipeline {
         stage('Deploy with PM2') {
             steps {
                 script {
-                    // Create app directory with correct permissions
                     sh """
                         mkdir -p ${APP_DIR}
                         cp -r * ${APP_DIR}/
                         chown -R ec2-user:ec2-user ${APP_DIR}
-                    """
-                    
-                    // PM2 process management
-                    sh """
                         cd ${APP_DIR}
                         pm2 stop ${APP_NAME} || true
                         pm2 delete ${APP_NAME} || true
@@ -75,7 +74,7 @@ pipeline {
     
     post {
         always {
-            cleanWs()  // Clean workspace after build
+            cleanWs()
         }
         success {
             echo "Deployment successful! Access at: http://${env.APP_PORT}"
