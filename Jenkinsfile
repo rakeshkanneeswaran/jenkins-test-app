@@ -29,9 +29,6 @@ pipeline {
             echo "Building Next.js App..."
             npm run build
             echo "Deploying using PM2..."
-            sudo mkdir -p ${APP_DIR}
-            cp -r . ${APP_DIR}/
-            cd ${APP_DIR}
             pm2 stop ${APP_NAME} || true
             pm2 delete ${APP_NAME} || true
             pm2 start npm --name "${APP_NAME}" -- start
