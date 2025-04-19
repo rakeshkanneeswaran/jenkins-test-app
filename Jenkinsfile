@@ -44,7 +44,7 @@ pipeline {
                         
 
                         # Install dependencies for production
-                        npm install --production
+                        npm install --production=false
 
                         npm run build
                         
