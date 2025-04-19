@@ -40,7 +40,8 @@ pipeline {
                         # Go to app dir
                         cd ${APP_DIR}
 
-                        npm install -g pm2
+                        npm install pm2
+
                         
                         
                         # Install dependencies for production
