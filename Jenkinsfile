@@ -41,11 +41,12 @@ pipeline {
                         cd ${APP_DIR}
 
                         npm install pm2
+                        
 
-                        
-                        
                         # Install dependencies for production
                         npm install --production
+
+                        npm run build
                         
                         # Restart app with PM2
                         pm2 delete ${APP_NAME} || true
