@@ -7,15 +7,17 @@ pipeline {
         APP_NAME = "my-nextjs-app"
         APP_DIR = "/home/ubuntu/app"
         APP_USER = "ubuntu"
-        PATH = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${env.PATH}"  // Critical fix
+        PATH = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:${env.PATH}"  // Important for Jenkins
     }
     stages {
+
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/rakeshkanneeswaran/jenkins-test-app'
             }
         }
-        stage('Install Dependencies') {
+
+        stage('Install Dependencies & Build') {
             steps {
                 sh '''
                     npm install --production=false
@@ -24,30 +26,31 @@ pipeline {
                 '''
             }
         }
-      stage('Prepare Directory') {
-    steps {
-        sh "echo 'Directory already prepared'"
+
+        stage('Deploy App to EC2') {
+            steps {
+                sh """
+                    sudo -u ${APP_USER} bash -c '
+                        # Clean app directory
+                        rm -rf ${APP_DIR}/*
+                        
+                        # Copy Jenkins workspace files to app dir
+                        cp -r ${WORKSPACE}/* ${APP_DIR}/
+                        
+                        # Go to app dir
+                        cd ${APP_DIR}
+                        
+                        # Install dependencies for production
+                        npm install --production
+                        
+                        # Restart app with PM2
+                        pm2 delete ${APP_NAME} || true
+                        pm2 start npm --name "${APP_NAME}" -- run start
+                        pm2 save
+                        pm2 list
+                    '
+                """
+            }
+        }
     }
-}
-        stage('Deploy with PM2') {
-    steps {
-        sh """
-            sudo -u ${APP_USER} bash -c '
-                # Clean and copy files
-                rm -rf ${APP_DIR}/*
-                cp -r ${WORKSPACE}/* ${APP_DIR}/
-                
-                # Install dependencies and start
-                cd ${APP_DIR}
-                npm install --production
-                pm2 delete ${APP_NAME} || true
-                pm2 start npm --name "${APP_NAME}" -- run start
-                pm2 save
-                pm2 list
-            '
-        """
-    }
-}
-    }
-   
 }
